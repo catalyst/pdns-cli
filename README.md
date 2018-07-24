@@ -30,7 +30,7 @@ List RRsets in the example.org zone
 ./pdns -a user:pass apiurl show-rrsets localhost example.org.
 ```
 
-## Full CLI list
+## Full CLI list a (!) indicates unimplemented API calls
 ```
 usage: pdns [-h] [-a USERNAME:PASSWORD] [-k API_KEY] [-i] url action ...
 
@@ -51,8 +51,8 @@ actions:
   action
     list-servers        list servers
     show-server         show details for a server
-    add-server          add a new server (pdnscontrol only)
-    edit-server         add a new server (pdnscontrol only)
+    !add-server          add a new server (pdnscontrol only) 
+    !edit-server         add a new server (pdnscontrol only)
     delete-server       delete a server (pdnscontrol only)
     list-config         list config settings
     list-zones          list zones
@@ -65,24 +65,24 @@ actions:
     delete-rrset        delete a Resource Record set
     edit-rrset-comments
                         add/replace/delete a comment in Resource Record set
-    notify              send a DNS NOTIFY to all slaves for a zone
-    axfr-retrieve       retrieve a zone from the master
-    export              export a zone in AXFR format
-    check               verify a zone content/configuration
-    list-metadata       list all metadata for a zone
-    show-metadata       show metadata of a given kind for a zone
-    add-metadata        add a new set of metadata for a zone
-    edit-metadata       edit a set of metadata for a zone
-    delete-metadata     delete all metadata of a given kind for a zone
-    list-cryptokeys     list all cryptokeys from a zone
-    show-cryptokey      show a cryptokey from a zone
-    add-cryptokey       add a new cryptokey to a zone
-    edit-cryptokey      edit a cryptokey from a zone
-    delete-cryptokey    delete a cryptokey from a zone
-    search              search across all zones, records and comments
-    search-log          search in the log
-    statistics          show internal statistics
-    flush-cache         flush the cache for a given domain name
+    !notify              send a DNS NOTIFY to all slaves for a zone
+    !axfr-retrieve       retrieve a zone from the master
+    !export              export a zone in AXFR format
+    !check               verify a zone content/configuration
+    !list-metadata       list all metadata for a zone
+    !show-metadata       show metadata of a given kind for a zone
+    !add-metadata        add a new set of metadata for a zone
+    !edit-metadata       edit a set of metadata for a zone
+    !delete-metadata     delete all metadata of a given kind for a zone
+    !list-cryptokeys     list all cryptokeys from a zone
+    !show-cryptokey      show a cryptokey from a zone
+    !add-cryptokey       add a new cryptokey to a zone
+    !edit-cryptokey      edit a cryptokey from a zone
+    !delete-cryptokey    delete a cryptokey from a zone
+    !search              search across all zones, records and comments
+    !search-log          search in the log
+    !statistics          show internal statistics
+    !flush-cache         flush the cache for a given domain name
 ```
 ## TODO
 
