@@ -44,9 +44,9 @@ While you can specify at runtime all details required to connect to a PowerDNS A
 The format is documented in the [conf.toml.dist](https://gitlab.catalyst.net.nz/elearning/pdns-cli/blob/master/conf.toml.dist) file included in the repository and allows you to specify standard details for your environment
 
 Things you can specify include
--PowerDNS API URL
--The server id to operate on
--You can specify multiple users and a list of zones each user is for, pdns-cli will select the appropriate user based on the zone being edited
+- PowerDNS API URL
+- The server id to operate on
+- You can specify multiple users and a list of zones each user is for, pdns-cli will select the appropriate user based on the zone being edited
 
 Using the `-c` command has precedence over the environment variable, so you can have a default configuration file and then override on an as needed basis
 
