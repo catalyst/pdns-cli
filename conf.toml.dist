@@ -13,8 +13,9 @@ default-user = "user-default"
 [user-default]
 user = "user"
 key = "superawesomekey"
-# This list indicates what zones this user has control over pdns-cli will use the zone passed in to
-# Identify what user to use for that api call
+# This list indicates what zones this user has control over
+# pdns-cli will use the zone passed in to
+# identify what user to use for that api call
 zones = ["example.org."]
 
 [user-two]
