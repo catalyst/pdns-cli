@@ -9,6 +9,7 @@ import time
 import argcomplete
 import toml
 import os
+import colored
 
 from datetime import datetime
 from operator import attrgetter
@@ -63,8 +64,9 @@ class PDNSClient(object):
                            basic_auth=auth, api_key=self.args.api_key)
 
         # Look up the action to see if it's implemented in a module, or raise an error
-        if self.args.action in self.cmd_map:
-            moduleklass = self.cmd_map[self.args.action]
+        cmd = self.args.action
+        if cmd in self.cmd_map:
+            moduleklass = self.cmd_map[cmd]
             # instance and pass in args and API instance
             module = moduleklass(self.args, self.api)
             # TODO better error handling
@@ -72,13 +74,27 @@ class PDNSClient(object):
                 module.run()
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 422 and 'error' in e.response.json():
-                    sys.stderr.write('API error: {}\n'.format(e.response.json()['error']))
+                    self.error('API error: {}', e.response.json()['error'])
+                    sys.exit(1)
                 else:
-                    sys.stderr.write('HTTP error: {}\n'.format(e))
+                    self.error('HTTP error: {}', e)
+                    sys.exit(1)
+            except PDNSCommandException as e:
+                self.error('{}: error: {}', cmd, str(e))
+                sys.exit(1)
 
         else:
             sys.stderr.write('FIXME: {}: action not implemented\n'.format(self.args.action))
             sys.exit(1)
+
+    def error(self, msg, *args, **kwargs):
+        """
+        Format and print error on stderr, print in red if in a tty.
+        """
+        if sys.stdout.isatty():
+            sys.stderr.write(colored.stylize(msg.format(*args, **kwargs), colored.fg('red')) + '\n')
+        else:
+            sys.stderr.write(msg.format(*args, **kwargs) + '\n')
 
     def load_modules(self):
         """
