@@ -46,10 +46,12 @@ The format is documented in the conf.toml.dist file included in the repository a
 Using a configuration file is highly recommended - compare
 ```
 ./pdns edit-rrset --add example.org. www A 192.0.5.9
+./pdns edit-rrset --add notexample.org. www CNAME example.org.
 ```
 and
 ```
-./pdns -k yourapikey -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
+./pdns -k superawesomekey -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
+./pdns -k superawesomekey2 -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add notexample.org. www CNAME example.org.
 ```
 
 ## Full CLI list a (!) indicates unimplemented API calls
