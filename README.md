@@ -7,6 +7,7 @@ This a PDNS API client implementation in Python.
 ### Prerequisites
 
 [python-requests](http://docs.python-requests.org/)
+[toml](https://pypi.org/project/toml/0.9.2/)
 
 ### Installing
 
