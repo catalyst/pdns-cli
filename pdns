@@ -30,7 +30,7 @@ class PDNSClient(object):
         """
         Main execution path.
 
-        Roughly - load all command module klasses into the command map
+        Load all command module klasses into the command map
 
         Parse the cli args using argparse (including command module subparsers)
 
@@ -38,7 +38,7 @@ class PDNSClient(object):
 
         Merge the cli args and config file args
 
-        TODO: validate we have required arguments (from config or cli)
+        Validate we have required arguments (from config or cli)
 
         Setup the API and execute the appropriate command module
         """
