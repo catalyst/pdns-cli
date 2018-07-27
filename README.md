@@ -30,6 +30,22 @@ List RRsets in the example.org zone
 ./pdns show-rrsets localhost example.org.
 ```
 
+##Example usage (without configuration file)
+Add a www subdomain to the localhost server for the example.org domain, with an A record of 192.0.5.9
+
+NB: the domain should always end with the .
+```
+./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
+```
+Edit the www subdomain to have a different IP for the A
+```
+./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --replace example.org. www A 192.0.5.10
+```
+List RRsets in the example.org zone
+```
+./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost show-rrsets localhost example.org.
+```
+
 ## Configuration
 While you can specify at runtime all details required to connect to a PowerDNS API, it's much more ergonomic to instead use a configuration file. This is a file in the .toml format located in one of the following two places
 - the path specified in the `PDNS_CLI_CONF_PATH` os environment variable
