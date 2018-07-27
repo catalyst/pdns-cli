@@ -34,6 +34,7 @@ class SERVER(PDNSCommand):
             print('{}: {}'.format(key, value))
 
     def edit_server(self):
+        self.fail("This command is not implemented yet")
         pass  # FIXME: implement me
 
     def delete_server(self):
