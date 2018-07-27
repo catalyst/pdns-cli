@@ -6,6 +6,9 @@ import argparse
 import requests.exceptions
 import sys
 import time
+import argcomplete
+import toml
+import os
 
 from datetime import datetime
 from operator import attrgetter
@@ -21,6 +24,13 @@ class PDNSClient(object):
         Main execution path.
         """
         self.parse_cli_args()
+
+        self.load_config_file()
+
+        # This is None when no config file was found/available/specified etc
+        if self.config_path:
+            self.generate_zone_map()
+            self.combine_cli_args_and_config()
 
         if self.args.auth:
             auth = tuple(self.args.auth.split(':', 1))
@@ -43,6 +53,63 @@ class PDNSClient(object):
             else:
                 sys.stderr.write('HTTP error: {}\n'.format(e))
 
+    def combine_cli_args_and_config(self):
+        """
+        Combine the cli args and configs provided by the config file (if any)
+        CLI args always take priority over config in all instances
+        """
+        if self.config['api']:
+            api = self.config['api']
+        else:
+            sys.stderr.write('No api section in config file, please check the config file and try again')
+            return
+
+        if api['url'] and not self.args.url:
+            self.args.url = api['url']
+
+        if api['default-server'] and not self.args.server:
+            self.args.server = api['default-server']
+
+        auth = None
+        # TODO check user exists and stderr if not set
+        final_user_conf = self.config[api['default-user']]
+
+        # If this zone has a mapped api user load that user from conf file
+        if self.args.zone in self.zone_map:
+            final_user_conf = self.zone_map[self.args.zone]
+            final_user_conf = self.config[final_user_conf]
+
+        if final_user_conf and not self.args.auth and ('user' in final_user_conf and 'key' in final_user_conf):
+            self.args.auth = '{}:{}'.format(final_user_conf['user'], final_user_conf['key'])
+
+    def load_config_file(self):
+        """
+        Load config file from either envvar or commandline option (higher priority)
+        """
+        self.config = None
+        self.config_path = None
+        if 'PDNS_CLI_CONF_PATH' in os.environ:
+            self.config_path = os.environ['PDNS_CLI_CONF_PATH']
+
+        if self.args.config_path:
+            self.config_path = self.args.config_path
+
+        if self.config_path:
+            self.config = toml.load(self.config_path)
+
+    def generate_zone_map(self):
+        """
+        Given the conf dict, search for keys that start with user and retreive their zones
+        attribute, then iterate through it and create a new mapping of zone -> full user key
+        we can then look this up later when deciding what user/key to use for the api call
+        """
+        self.zone_map = dict()
+        for key, dictmap in self.config.items():
+            if key.startswith('user'):
+                if 'zones' in dictmap:
+                    for zone in dictmap['zones']:
+                        self.zone_map[zone] = key
+
     def parse_cli_args(self):
         """
         Command line argument processing and autocompletion.
@@ -51,40 +118,40 @@ class PDNSClient(object):
         parser.add_argument('-a', '--auth', metavar='USERNAME:PASSWORD', help='credentials for Basic authentication')
         parser.add_argument('-k', '--api-key', help='API key')
         parser.add_argument('-i', '--insecure', action='store_true', help='allow insecure TLS connections')
-        parser.add_argument('url', help='PowerDNS API URL')
+        parser.add_argument('-c', '--config-path', help='give a different config file path')
+        parser.add_argument('-u', '--url', help='PowerDNS API URL')
+        parser.add_argument('-s', '--server', help='server ID')
+
 
         subparsers = parser.add_subparsers(title='actions', metavar='action', dest='action')
         subparsers.required = True
 
-        server_parser = argparse.ArgumentParser(add_help=False)
-        server_parser.add_argument('server', help='server ID')
-
-        zone_parser = argparse.ArgumentParser(add_help=False, parents=[server_parser])
+        zone_parser = argparse.ArgumentParser(add_help=False)
         zone_parser.add_argument('zone', help='zone ID')
 
         # servers
 
         subparsers.add_parser('list-servers', help='list servers')
 
-        subparsers.add_parser('show-server', parents=[server_parser], help='show details for a server')
+        subparsers.add_parser('show-server', help='show details for a server')
 
-        subparsers.add_parser('add-server', parents=[server_parser], help='add a new server (pdnscontrol only)')
+        subparsers.add_parser('add-server', help='add a new server (pdnscontrol only)')
 
-        subparsers.add_parser('edit-server', parents=[server_parser], help='add a new server (pdnscontrol only)')
+        subparsers.add_parser('edit-server', help='add a new server (pdnscontrol only)')
 
-        subparsers.add_parser('delete-server', parents=[server_parser], help='delete a server (pdnscontrol only)')
+        subparsers.add_parser('delete-server', help='delete a server (pdnscontrol only)')
 
         # config settings
 
-        subparsers.add_parser('list-config', parents=[server_parser], help='list config settings')
+        subparsers.add_parser('list-config', help='list config settings')
 
         # zones
 
-        subparsers.add_parser('list-zones', parents=[server_parser], help='list zones')
+        subparsers.add_parser('list-zones', help='list zones')
 
         subparsers.add_parser('show-zone', parents=[zone_parser], help='show details for a zone')
 
-        add_zone = subparsers.add_parser('add-zone', parents=[server_parser],
+        add_zone = subparsers.add_parser('add-zone',
                                          help='add a new zone, return zone ID')
         add_zone.add_argument('name', help='zone name (must include the trailing dot)')
         add_zone.add_argument('--kind', choices=('Native', 'Master', 'Slave', 'Forwarded'), default='Master',
@@ -191,7 +258,7 @@ class PDNSClient(object):
         # cache
 
         subparsers.add_parser('flush-cache', help='flush the cache for a given domain name')
-
+        argcomplete.autocomplete(parser)
         self.args = parser.parse_args()
 
     def fail(self, msg):

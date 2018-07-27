@@ -14,30 +14,45 @@ This a PDNS API client implementation in Python.
 pip install -r requirements.txt
 ```
 
-## Example usage
+## Example usage (with conf file)
 Add a www subdomain to the localhost server for the example.org domain, with an A record of 192.0.5.9
 
 NB: the domain should always end with the .
 ```
-./pdns -a user:pass apiurl edit-rrset --add  localhost example.org. www A 192.0.5.9
+./pdns edit-rrset --add example.org. www A 192.0.5.9
 ```
 Edit the www subdomain to have a different IP for the A
 ```
-./pdns -a user:pass apiurl edit-rrset --add  localhost example.org. www A 192.0.5.10
+./pdns edit-rrset --add example.org. www A 192.0.5.10
 ```
 List RRsets in the example.org zone
 ```
-./pdns -a user:pass apiurl show-rrsets localhost example.org.
+./pdns show-rrsets localhost example.org.
+```
+
+## Configuration
+While you can specify at runtime all details required to connect to a PowerDNS API, it's much more ergonomic to instead use a configuration file. This is a file in the .toml format located in one of the following two places
+- the path specified in the `PDNS_CLI_CONF_PATH` os environment variable
+- the path provided by the optional cli argument `-c or --config-path`
+
+The format is documented in the conf.toml.dist file included in the repository and allows you to specify multiple api user/keys who will be used for individual zones (or groups) when editing that zone. It also has the ability to set the url in use and the default server to save you having to specify them. using the `-c` command has precedence over the environment variable, so you can have a default configuration file and then override on an as needed basis
+
+Using a configuration file is highly recommended - compare
+```
+./pdns edit-rrset --add example.org. www A 192.0.5.9
+```
+and
+```
+./pdns -k yourapikey -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
 ```
 
 ## Full CLI list a (!) indicates unimplemented API calls
 ```
-usage: pdns [-h] [-a USERNAME:PASSWORD] [-k API_KEY] [-i] url action ...
+usage: pdns [-h] [-a USERNAME:PASSWORD] [-k API_KEY] [-i] [-c CONFIG_PATH]
+            [-u URL] [-s SERVER]
+            action ...
 
 CLI client for the PowerDNS API
-
-positional arguments:
-  url                   PowerDNS API URL
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -46,12 +61,17 @@ optional arguments:
   -k API_KEY, --api-key API_KEY
                         API key
   -i, --insecure        allow insecure TLS connections
+  -c CONFIG_PATH, --config-path CONFIG_PATH
+                        give a different config file path
+  -u URL, --url URL     PowerDNS API URL
+  -s SERVER, --server SERVER
+                        server ID
 
 actions:
   action
     list-servers        list servers
     show-server         show details for a server
-    !add-server          add a new server (pdnscontrol only) 
+    !add-server          add a new server (pdnscontrol only)
     !edit-server         add a new server (pdnscontrol only)
     delete-server       delete a server (pdnscontrol only)
     list-config         list config settings
@@ -91,3 +111,4 @@ See [TODO](TODO.md).
 ## Authors
 
 * **Pierre Guinoiseau** - *Initial work*
+* **Francis Devine** - *Configuration files*

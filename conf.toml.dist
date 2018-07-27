@@ -1,0 +1,23 @@
+title = "PDNS config example"
+
+# The API details for your PowerDNS api
+[api]
+# Please be aware the trailing slash is required
+url = "https://mydns.api.site.net/api/v1/"
+# The default server to pass in
+default-server = "localhost"
+# The default user to use when no zone is matched
+default-user = "user-default"
+
+# Multiple API users can be specified as long as the key starts with "user-"
+[user-default]
+user = "user"
+key = "superawesomekey"
+# This list indicates what zones this user has control over pdns-cli will use the zone passed in to
+# Identify what user to use for that api call
+zones = ["example.org."]
+
+[user-two]
+user = "user2"
+key = "superawesomekey2"
+zones = ["notexample.org.", "secretblogs.io."]
