@@ -5,7 +5,6 @@ from __future__ import print_function
 import argparse
 import requests.exceptions
 import sys
-import time
 import argcomplete
 import toml
 import os
@@ -54,6 +53,10 @@ class PDNSClient(object):
         if self.config_path:
             self.generate_zone_map()
             self.combine_cli_args_and_config()
+
+        validate = self.validate_arguments()
+        if validate != 0:
+            sys.exit(validate)
 
         if self.args.auth:
             auth = tuple(self.args.auth.split(':', 1))
@@ -106,25 +109,58 @@ class PDNSClient(object):
             for command in moduleklass.COMMANDS:
                 self.cmd_map[command] = moduleklass
 
+    def validate_arguments(self):
+        """
+        Ensure that required arguments are present, or die with a nice error message
+        If this method returns a non zero value sys.exit is called with the return value
+        """
+        final = 0 # We start out with a working command
+
+        if not self.args.url:
+            self.error('The PowerDNS API URL is required')
+            fnal = 2
+
+        if not self.args.api_key and not self.args.auth:
+            self.error('An API key or user:token combination is required')
+            final = 2
+
+        if self.args.action != 'list-servers' and not self.args.server:
+            self.error('You must specify a server ID')
+            final = 2
+
+        return final
+
     def combine_cli_args_and_config(self):
         """
         Combine the cli args and configs provided by the config file (if any)
         CLI args always take priority over config in all instances
         """
-        if self.config['api']:
+        if 'api' in self.config:
             api = self.config['api']
         else:
-            sys.stderr.write('No api section in config file, please check the config file and try again')
+            self.error('No api section in config file, please check the config file and try again')
             return
 
-        if api['url'] and not self.args.url:
+        if 'url' in api and not self.args.url:
             self.args.url = api['url']
 
-        if api['default-server'] and not self.args.server:
+        if 'default-server' in api and not self.args.server:
             self.args.server = api['default-server']
 
+        self.args.auth = self.lookup_api_user(api)
+
+    def lookup_api_user(self, api):
+        """
+        Based on the zone being edited and the default-user in the conf file select the appropriate api-user or key
+        """
         auth = None
-        # TODO check user exists and stderr if not set
+        if 'default-user' not in api:
+            self.error('No default user specified in API section in configuration file')
+            return
+        if api['default-user'] not in self.config:
+            self.error('Default user in configuration does not have associated entry, check your conf file syntax')
+            return
+
         final_user_conf = self.config[api['default-user']]
 
         # If a zone is given and this zone has a mapped api user load that user from conf file
@@ -133,7 +169,8 @@ class PDNSClient(object):
             final_user_conf = self.config[final_user_conf]
 
         if final_user_conf and not self.args.auth and ('user' in final_user_conf and 'key' in final_user_conf):
-            self.args.auth = '{}:{}'.format(final_user_conf['user'], final_user_conf['key'])
+            auth = '{}:{}'.format(final_user_conf['user'], final_user_conf['key'])
+        return auth
 
     def load_config_file(self):
         """

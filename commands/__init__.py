@@ -49,10 +49,12 @@ class PDNSCommand(object):
         pass
 
     @classmethod
-    def check_parser_args(cls, parser, args):
+    def validate_arguments(cls, args):
         """
         Override to add custom argument checks that argparse cannot do.
         """
+        if cls.REQUIRES_SERVER and 'server' not in args:
+            return (2, 'You did not specify a server')
 
     def __init__(self, args, api):
         """
