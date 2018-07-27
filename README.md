@@ -23,7 +23,7 @@ NB: the domain should always end with the .
 ```
 Edit the www subdomain to have a different IP for the A
 ```
-./pdns edit-rrset --add example.org. www A 192.0.5.10
+./pdns edit-rrset --replace example.org. www A 192.0.5.10
 ```
 List RRsets in the example.org zone
 ```
