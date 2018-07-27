@@ -61,7 +61,8 @@ and
 ./pdns -k superawesomekey2 -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add notexample.org. www CNAME example.org.
 ```
 
-## Full CLI list a (!) indicates unimplemented API calls
+## Full CLI list 
+**A ! at the command start indicates unimplemented API calls**
 ```
 usage: pdns [-h] [-a USERNAME:PASSWORD] [-k API_KEY] [-i] [-c CONFIG_PATH]
             [-u URL] [-s SERVER]
