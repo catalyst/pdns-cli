@@ -37,11 +37,11 @@ List RRsets in the example.org zone
 ./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost show-rrsets localhost example.org.
 ```
 ## Configuration
-While you can specify at runtime all details required to connect to a PowerDNS API, it's much more ergonomic to instead use a configuration file. This is a file in the .toml format located in one of the following two places
+While you can specify at runtime all details required to connect to a PowerDNS API, it's much more ergonomic to instead use a configuration file. This is a file in the [.toml](https://github.com/toml-lang/toml) format located in one of the following two places
 - the path specified in the `PDNS_CLI_CONF_PATH` os environment variable
 - the path provided by the optional cli argument `-c or --config-path`
 
-The format is documented in the conf.toml.dist file included in the repository and allows you to specify multiple api user/keys who will be used for individual zones (or groups) when editing that zone. It also has the ability to set the url in use and the default server to save you having to specify them. using the `-c` command has precedence over the environment variable, so you can have a default configuration file and then override on an as needed basis
+The format is documented in the [conf.toml.dist](https://gitlab.catalyst.net.nz/elearning/pdns-cli/blob/master/conf.toml.dist) file included in the repository and allows you to specify multiple api user/keys who will be used for individual zones (or groups) when editing that zone. It also has the ability to set the url in use and the default server to save you having to specify them. using the `-c` command has precedence over the environment variable, so you can have a default configuration file and then override on an as needed basis
 
 Using a configuration file is highly recommended - compare
 ```
