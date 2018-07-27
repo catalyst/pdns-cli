@@ -13,4 +13,4 @@ class SEARCH(PDNSCommand):
         subparsers.add_parser('search-log', help='search in the log')
 
     def run(self):
-        getattr(self, (self.args.action).replace('-', '_'))()
+        self.fail('This command is not yet implemented')

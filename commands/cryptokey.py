@@ -19,4 +19,4 @@ class CRYPTOKEY(PDNSCommand):
         subparsers.add_parser('delete-cryptokey', help='delete a cryptokey from a zone')
 
     def run(self):
-        getattr(self, (self.args.action).replace('-', '_'))()
+        self.fail('This command is not yet implemented')

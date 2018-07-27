@@ -18,4 +18,4 @@ class CONFIG(PDNSCommand):
         subparsers.add_parser('check', parents=[zone_parser], help='verify a zone content/configuration')
 
     def run(self):
-        getattr(self, (self.args.action).replace('-', '_'))()
+        self.fail('This command is not yet implemented')

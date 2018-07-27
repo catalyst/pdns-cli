@@ -11,4 +11,4 @@ class STATISTICS(PDNSCommand):
         subparsers.add_parser('statistics', help='show internal statistics')
 
     def run(self):
-        getattr(self, (self.args.action).replace('-', '_'))()
+        self.fail('This command is not yet implemented')

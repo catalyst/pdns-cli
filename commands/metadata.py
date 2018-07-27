@@ -18,4 +18,4 @@ class METADATA(PDNSCommand):
         subparsers.add_parser('delete-metadata', help='delete all metadata of a given kind for a zone')
 
     def run(self):
-        getattr(self, (self.args.action).replace('-', '_'))()
+        self.fail('This command is not yet implemented')
