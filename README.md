@@ -12,6 +12,8 @@ This a PDNS API client implementation in Python.
 
 [colored](https://pypi.org/project/colored/)
 
+[argcomplete](http://argcomplete.readthedocs.io/en/latest/index.html)
+
 ### Installing
 
 ```
