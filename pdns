@@ -12,17 +12,39 @@ import os
 
 from datetime import datetime
 from operator import attrgetter
+from commands import *
 
 from api import PDNSAPI
-from models import Comment, Record, RRset
 
 
 class PDNSClient(object):
 
+    @property
+    def commands(self):
+        """
+        A dict of all command modules indexed with their name.
+        """
+        return {klass.name(): klass for klass in PDNSCommand.__subclasses__()}
+
     def run(self):
         """
         Main execution path.
+
+        Roughly - load all command module klasses into the command map
+
+        Parse the cli args using argparse (including command module subparsers)
+
+        Load the config file if one can be found
+
+        Merge the cli args and config file args
+
+        TODO: validate we have required arguments (from config or cli)
+
+        Setup the API and execute the appropriate command module
         """
+
+        self.load_modules()
+
         self.parse_cli_args()
 
         self.load_config_file()
@@ -36,22 +58,37 @@ class PDNSClient(object):
             auth = tuple(self.args.auth.split(':', 1))
         else:
             auth = None
+
         self.api = PDNSAPI(self.args.url, verify=(not self.args.insecure),
                            basic_auth=auth, api_key=self.args.api_key)
 
-        try:
-            action_method = getattr(self, self.args.action.replace('-', '_'))
-        except AttributeError:
+        # Look up the action to see if it's implemented in a module, or raise an error
+        if self.args.action in self.cmd_map:
+            moduleklass = self.cmd_map[self.args.action]
+            # instance and pass in args and API instance
+            module = moduleklass(self.args, self.api)
+            # TODO better error handling
+            try:
+                module.run()
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 422 and 'error' in e.response.json():
+                    sys.stderr.write('API error: {}\n'.format(e.response.json()['error']))
+                else:
+                    sys.stderr.write('HTTP error: {}\n'.format(e))
+
+        else:
             sys.stderr.write('FIXME: {}: action not implemented\n'.format(self.args.action))
             sys.exit(1)
 
-        try:
-            action_method(self.args)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 422 and 'error' in e.response.json():
-                sys.stderr.write('API error: {}\n'.format(e.response.json()['error']))
-            else:
-                sys.stderr.write('HTTP error: {}\n'.format(e))
+    def load_modules(self):
+        """
+        Create a map of the action subparser cmd to the class that implements
+        that command
+        """
+        self.cmd_map = dict()
+        for modulename, moduleklass in self.commands.items():
+            for command in moduleklass.COMMANDS:
+                self.cmd_map[command] = moduleklass
 
     def combine_cli_args_and_config(self):
         """
@@ -74,8 +111,8 @@ class PDNSClient(object):
         # TODO check user exists and stderr if not set
         final_user_conf = self.config[api['default-user']]
 
-        # If this zone has a mapped api user load that user from conf file
-        if self.args.zone in self.zone_map:
+        # If a zone is given and this zone has a mapped api user load that user from conf file
+        if 'zone' in self.args and (self.args.zone in self.zone_map):
             final_user_conf = self.zone_map[self.args.zone]
             final_user_conf = self.config[final_user_conf]
 
@@ -114,6 +151,8 @@ class PDNSClient(object):
         """
         Command line argument processing and autocompletion.
         """
+
+        # Top level parser arguments
         parser = argparse.ArgumentParser(description='CLI client for the PowerDNS API')
         parser.add_argument('-a', '--auth', metavar='USERNAME:PASSWORD', help='credentials for Basic authentication')
         parser.add_argument('-k', '--api-key', help='API key')
@@ -129,135 +168,9 @@ class PDNSClient(object):
         zone_parser = argparse.ArgumentParser(add_help=False)
         zone_parser.add_argument('zone', help='zone ID')
 
-        # servers
+        for modulename, moduleklass in self.commands.items():
+            moduleklass.init_parser(subparsers, zone_parser)
 
-        subparsers.add_parser('list-servers', help='list servers')
-
-        subparsers.add_parser('show-server', help='show details for a server')
-
-        subparsers.add_parser('add-server', help='add a new server (pdnscontrol only)')
-
-        subparsers.add_parser('edit-server', help='add a new server (pdnscontrol only)')
-
-        subparsers.add_parser('delete-server', help='delete a server (pdnscontrol only)')
-
-        # config settings
-
-        subparsers.add_parser('list-config', help='list config settings')
-
-        # zones
-
-        subparsers.add_parser('list-zones', help='list zones')
-
-        subparsers.add_parser('show-zone', parents=[zone_parser], help='show details for a zone')
-
-        add_zone = subparsers.add_parser('add-zone',
-                                         help='add a new zone, return zone ID')
-        add_zone.add_argument('name', help='zone name (must include the trailing dot)')
-        add_zone.add_argument('--kind', choices=('Native', 'Master', 'Slave', 'Forwarded'), default='Master',
-                              help='kind of zone')
-        add_zone.add_argument('--nameservers', nargs='+', default=[], metavar="NAMESERVER",
-                              help='nameserver names (must include the trailing dot) (authoritative only)')
-        add_zone.add_argument('--masters', nargs='+', metavar="SERVER", help='master servers')
-        add_zone.add_argument('--servers', nargs='+', metavar="SERVER",
-                              help='forwarded-to servers (recursor only)')
-        add_zone.add_argument('--account', help='account (authoritative only)')
-        add_zone.add_argument('--recursion-desired', action='store_true',
-                              help='set the RD bit for forwarded zones (authoritative only)')
-
-        edit_zone = subparsers.add_parser('edit-zone', parents=[zone_parser], help='add a new zone')
-        edit_zone.add_argument('--kind', choices=('Native', 'Master', 'Slave', 'Forwarded'), help='kind of zone')
-        edit_zone.add_argument('--masters', nargs='+', metavar="SERVER", help='master servers')
-        edit_zone.add_argument('--servers', nargs='+', metavar="SERVER",
-                               help='forwarded-to servers (recursor only)')
-        edit_zone.add_argument('--account', help='account (authoritative only)')
-        edit_zone.add_argument('--recursion-desired', action='store_true',
-                               help='set the RD bit for forwarded zones (authoritative only)')
-
-        subparsers.add_parser('delete-zone', parents=[zone_parser], help='delete a zone')
-
-        subparsers.add_parser('show-rrsets', parents=[zone_parser], help='show Resource Record sets for a zone')
-
-        edit_rrset = subparsers.add_parser('edit-rrset', parents=[zone_parser],
-                                           help='add/replace/delete a record in Resource Record set')
-        edit_rrset_mode = edit_rrset.add_mutually_exclusive_group(required=True)
-        edit_rrset_mode.add_argument('--add', action='store_const', dest='mode', const='add',
-                                     help='add a record for a domain/subdomain')
-        edit_rrset_mode.add_argument('--replace', action='store_const', dest='mode', const='replace',
-                                     help='replace all records for a domain/subdomain')
-        edit_rrset_mode.add_argument('--delete', action='store_const', dest='mode', const='delete',
-                                     help='delete a record for a domain/subdomain')
-        edit_rrset.add_argument('--disabled', action='store_true', help='disable record')
-        edit_rrset.add_argument('--set-ptr', action='store_true', help='set PTR records in matching reverse zones')
-        edit_rrset.add_argument('--ttl', type=int, default=3600, help='record TTL')
-        edit_rrset.add_argument('name', help='record name')
-        edit_rrset.add_argument('type', help='record type')
-        edit_rrset.add_argument('content', help='record content')
-
-        delete_rrset = subparsers.add_parser('delete-rrset', parents=[zone_parser],
-                                             help='delete a Resource Record set')
-        delete_rrset.add_argument('name', help='record name')
-        delete_rrset.add_argument('type', help='record type')
-
-        edit_rrset_comments = subparsers.add_parser('edit-rrset-comments', parents=[zone_parser],
-                                                    help='add/replace/delete a comment in Resource Record set')
-        edit_rrset_comments_mode = edit_rrset_comments.add_mutually_exclusive_group(required=True)
-        edit_rrset_comments_mode.add_argument('--add', action='store_const', dest='mode', const='add',
-                                              help='add a comment for a domain/subdomain')
-        edit_rrset_comments_mode.add_argument('--replace', action='store_const', dest='mode', const='replace',
-                                              help='replace all comments for a domain/subdomain')
-        edit_rrset_comments_mode.add_argument('--delete', action='store_const', dest='mode', const='delete',
-                                              help='delete a comment for a domain/subdomain')
-        edit_rrset_comments.add_argument('--account', default='', help='comment account')
-        edit_rrset_comments.add_argument('name', help='record name')
-        edit_rrset_comments.add_argument('type', help='record type')
-        edit_rrset_comments.add_argument('content', help='record content')
-
-        subparsers.add_parser('notify', parents=[zone_parser], help='send a DNS NOTIFY to all slaves for a zone')
-
-        subparsers.add_parser('axfr-retrieve', parents=[zone_parser], help='retrieve a zone from the master')
-
-        subparsers.add_parser('export', parents=[zone_parser], help='export a zone in AXFR format')
-
-        subparsers.add_parser('check', parents=[zone_parser], help='verify a zone content/configuration')
-
-        # metadata
-
-        subparsers.add_parser('list-metadata', help='list all metadata for a zone')
-
-        subparsers.add_parser('show-metadata', help='show metadata of a given kind for a zone')
-
-        subparsers.add_parser('add-metadata', help='add a new set of metadata for a zone')
-
-        subparsers.add_parser('edit-metadata', help='edit a set of metadata for a zone')
-
-        subparsers.add_parser('delete-metadata', help='delete all metadata of a given kind for a zone')
-
-        # cryptokeys
-
-        subparsers.add_parser('list-cryptokeys', help='list all cryptokeys from a zone')
-
-        subparsers.add_parser('show-cryptokey', help='show a cryptokey from a zone')
-
-        subparsers.add_parser('add-cryptokey', help='add a new cryptokey to a zone')
-
-        subparsers.add_parser('edit-cryptokey', help='edit a cryptokey from a zone')
-
-        subparsers.add_parser('delete-cryptokey', help='delete a cryptokey from a zone')
-
-        # search
-
-        subparsers.add_parser('search', help='search across all zones, records and comments')
-
-        subparsers.add_parser('search-log', help='search in the log')
-
-        # statistics
-
-        subparsers.add_parser('statistics', help='show internal statistics')
-
-        # cache
-
-        subparsers.add_parser('flush-cache', help='flush the cache for a given domain name')
         argcomplete.autocomplete(parser)
         self.args = parser.parse_args()
 
@@ -265,178 +178,11 @@ class PDNSClient(object):
         sys.stderr.write('error: {}\n'.format(msg))
         sys.exit(1)
 
-    def list_servers(self, args):
-        for server in sorted(self.api.servers, key=attrgetter('id')):
-            print(server.id)
-
-    def show_server(self, args):
-        server = self.api.server(self.args.server)
-
-        for key, value in sorted(server.data.items()):
-            if key == 'url' or key.endswith('_url'):
-                continue
-            print('{}: {}'.format(key, value))
-
-    def edit_server(self, args):
-        pass  # FIXME: implement me
-
-    def delete_server(self, args):
-        server = self.api.server(self.args.server)
-
-        server.delete()
-
     def list_config(self, args):
         server = self.api.server(self.args.server)
 
         for setting in sorted(server.config, key=attrgetter('id')):
             print('{}: {}'.format(setting.data['name'], setting.data['value']))
-
-    def list_zones(self, args):
-        server = self.api.server(self.args.server)
-
-        for zone in sorted(server.zones, key=attrgetter('id')):
-            print(zone.data['id'])
-
-    def show_zone(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        for key, value in sorted(zone.data.items()):
-            if key in ['rrsets', 'url'] or key.endswith('_url'):
-                continue
-            print('{}: {}'.format(key, value))
-
-    def add_zone(self, args):
-        server = self.api.server(self.args.server)
-
-        if not self.args.name.endswith('.'):
-            self.fail('zone name must end with a dot!')
-
-        if self.args.nameservers and any([ns for ns in self.args.nameservers if not ns.endswith('.')]):
-            self.fail('nameservers name must end with a dot!')
-
-        data = {key: getattr(self.args, key)
-                for key in ('masters', 'servers', 'account', 'recursion_desired')
-                if getattr(self.args, key) is not None}
-        zone = server.create_zone(self.args.name, kind=self.args.kind, nameservers=self.args.nameservers, **data)
-
-        print("Zone added with ID '{}'".format(zone.data['id']))
-
-    def edit_zone(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        data = {key: getattr(self.args, key)
-                for key in ('kind', 'masters', 'servers', 'account', 'recursion_desired')
-                if getattr(self.args, key) is not None}
-        # mandatory for some reason
-        if 'kind' not in data:
-            data['kind'] = zone.data['kind']
-        zone.update(**data)
-
-    def delete_zone(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        zone.delete()
-
-    def show_rrsets(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        # base domain first
-        for rrset in sorted([rrset for rrset in zone.rrsets if rrset.name == zone.data['name']],
-                            key=attrgetter('name', 'type')):
-            self._print_rrset(rrset)
-
-        # subdomains next
-        for rrset in sorted([rrset for rrset in zone.rrsets if rrset.name != zone.data['name']],
-                            key=attrgetter('name', 'type')):
-            self._print_rrset(rrset)
-
-    def _print_rrset(self, rrset):
-        for comment in sorted(rrset.comments, key=attrgetter('modified_at')):
-            if comment.account:
-                print(';; {} by {}: {}'.format(datetime.fromtimestamp(comment.modified_at).isoformat(),
-                                               comment.account, comment.content))
-            else:
-                print(';; {}: {}'.format(datetime.fromtimestamp(comment.modified_at).isoformat(),
-                                         comment.content))
-
-        for record in sorted(rrset.records, key=attrgetter('content')):
-            line = "{}\t{}\tIN\t{}\t{}".format(rrset.name, rrset.ttl, rrset.type, record.content)
-            if record.disabled:
-                line = "; {} ; DISABLED".format(line)
-            print(line)
-
-    def edit_rrset(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        name = self.args.name
-        if not name.endswith('.'):
-            name = '{}.{}'.format(name, zone.data['name'])
-
-        new_rrset = RRset(name=name, type=self.args.type)
-        # look for existing rrset
-        for rrset in zone.rrsets:
-            if rrset == new_rrset:
-                new_rrset = rrset
-                break
-
-        new_rrset.ttl = self.args.ttl
-
-        record = Record(content=self.args.content, disabled=self.args.disabled, set_ptr=self.args.set_ptr)
-        if self.args.mode == 'add':
-            new_rrset.records.add(record)
-        elif self.args.mode == 'replace':
-            new_rrset.records.clear()
-            new_rrset.records.add(record)
-        elif self.args.mode == 'delete':
-            new_rrset.records.discard(record)
-
-        zone.update_rrsets([new_rrset])
-
-    def delete_rrset(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        name = self.args.name
-        if not name.endswith('.'):
-            name = '{}.{}'.format(name, zone.data['name'])
-
-        rrset = RRset(name=name, type=self.args.type)
-        zone.update_rrsets([rrset], delete=True)
-
-    def edit_rrset_comments(self, args):
-        server = self.api.server(self.args.server)
-        zone = server.zone(self.args.zone)
-
-        name = self.args.name
-        if not name.endswith('.'):
-            name = '{}.{}'.format(name, zone.data['name'])
-
-        new_rrset = RRset(name=name, type=self.args.type)
-        # look for existing rrset
-        for rrset in zone.rrsets:
-            if rrset == new_rrset:
-                new_rrset = rrset
-                break
-
-        if not new_rrset.records:  # no records means it didn't come from the API
-            self.fail('RRset {}/{} not found'.format(name, self.args.type))
-
-        comment = Comment(content=self.args.content, account=self.args.account, modified_at=time.time())
-        if self.args.mode == 'add':
-            new_rrset.comments.add(comment)
-        elif self.args.mode == 'replace':
-            new_rrset.comments.clear()
-            new_rrset.comments.add(comment)
-        elif self.args.mode == 'delete':
-            new_rrset.comments.discard(comment)
-
-        zone.update_rrsets([new_rrset])
-
 
 if __name__ == '__main__':
     pdns_client = PDNSClient()

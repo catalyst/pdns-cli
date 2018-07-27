@@ -1,3 +1,4 @@
 requests
 argcomplete>=1.8.2
 toml>=0.9.2
+colored
