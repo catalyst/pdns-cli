@@ -10,6 +10,8 @@ This a PDNS API client implementation in Python.
 
 [toml](https://pypi.org/project/toml/0.9.2/)
 
+[colored](https://pypi.org/project/colored/)
+
 ### Installing
 
 ```
