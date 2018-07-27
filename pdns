@@ -147,7 +147,8 @@ class PDNSClient(object):
         if 'default-server' in api and not self.args.server:
             self.args.server = api['default-server']
 
-        self.args.auth = self.lookup_api_user(api)
+        if not self.args.auth and not self.args.api_key:
+            self.args.auth = self.lookup_api_user(api)
 
     def lookup_api_user(self, api):
         """
