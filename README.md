@@ -1,6 +1,6 @@
-# PDNS API client
+# PowerDNS HTTPS API client
 
-This a PDNS API client implementation in Python.
+This a PowerDNS HTTPS API client implementation in Python. For more information about the PowerDNS API see [the PowerDNS documentation](https://doc.powerdns.com/authoritative/http-api/).
 
 ## Getting started
 
@@ -16,32 +16,43 @@ This a PDNS API client implementation in Python.
 
 ### Installing
 
+Create a virtual environment and install the necessary packages:
+
 ```
 pip install -r requirements.txt
 ```
 
 ## Example usage
-Add a www subdomain to the localhost server for the example.org domain, with an A record of 192.0.5.9
 
-NB: the domain should always end with the .
+Adding a `www` hostname to the `localhost` server for the `example.org` domain, with an A record of `192.0.5.9`
+
+The zone name must always end with a `.` character so it is "full qualified".
+
 ```
 # with config file
 ./pdns -c conf.toml edit-rrset --add example.org. www A 192.0.5.9
 # without
-./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
+./pdns -a user:token -u https://dns.example.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
 ```
-Edit the www subdomain to have a different IP for the A
+
+Editing the `www` hostname to have a different IP for the `A` record:
+
 ```
 ./pdns -c conf.toml edit-rrset --replace example.org. www A 192.0.5.10
-./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --replace example.org. www A 192.0.5.10
+./pdns -a user:token -u https://dns.example.com/api/v1/ -s localhost edit-rrset --replace example.org. www A 192.0.5.10
 ```
-List RRsets in the example.org zone
+
+List RRsets in the `example.org` zone:
+
 ```
 ./pdns -c conf.toml show-rrsets localhost example.org.
-./pdns -a user:token -u https://yourdnsapi.com/api/v1/ -s localhost show-rrsets localhost example.org.
+./pdns -a user:token -u https://dns.example.com/api/v1/ -s localhost show-rrsets localhost example.org.
 ```
+
 ## Configuration
+
 While you can specify at runtime all details required to connect to a PowerDNS API, it's much more ergonomic to instead use a configuration file. This is a file in the [.toml](https://github.com/toml-lang/toml) format located in one of the following two places
+
 - the path specified in the `PDNS_CLI_CONF_PATH` os environment variable
 - the path provided by the optional cli argument `-c or --config-path`
 
@@ -54,18 +65,21 @@ Things you can specify include
 
 Using the `-c` command has precedence over the environment variable, so you can have a default configuration file and then override on an as needed basis
 
-Using a configuration file is highly recommended - compare
+Using a configuration file is highly recommended - compare:
+
 ```
 ./pdns edit-rrset --add example.org. www A 192.0.5.9
 ./pdns edit-rrset --add notexample.org. www CNAME example.org.
 ```
+
 and
+
 ```
 ./pdns -k superawesomekey -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add example.org. www A 192.0.5.9
 ./pdns -k superawesomekey2 -u https://yourdnsapi.com/api/v1/ -s localhost edit-rrset --add notexample.org. www CNAME example.org.
 ```
 
-## Full CLI list 
+## Full command list 
 **A ! at the command start indicates unimplemented API calls**
 ```
 usage: pdns [-h] [-a USERNAME:PASSWORD] [-k API_KEY] [-i] [-c CONFIG_PATH]
