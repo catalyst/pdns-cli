@@ -1,9 +1,9 @@
-title = "PDNS config example"
+title = "PowerDNS config example"
 
 # The API details for your PowerDNS api
 [api]
 # Please be aware the trailing slash is required
-url = "https://mydns.api.site.net/api/v1/"
+url = "https://dns.api.example.com/api/v1/"
 # The default server to pass in
 default-server = "localhost"
 # The default user to use when no zone is matched
@@ -21,4 +21,4 @@ zones = ["example.org."]
 [user-two]
 user = "user2"
 key = "superawesomekey2"
-zones = ["notexample.org.", "secretblogs.io."]
+zones = ["example.net.", "example.com."]
