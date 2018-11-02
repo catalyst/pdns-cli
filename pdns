@@ -118,7 +118,7 @@ class PDNSClient(object):
 
         if not self.args.url:
             self.error('The PowerDNS API URL is required')
-            fnal = 2
+            final = 2
 
         if not self.args.api_key and not self.args.auth:
             self.error('An API key or user:token combination is required')
