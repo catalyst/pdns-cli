@@ -3,7 +3,7 @@ from operator import attrgetter
 class ZONE(PDNSCommand):
     NAME = 'zone'
     DESCRIPTION = 'Zone related API actions'
-    COMMANDS = ['list-zones', 'show-zone', 'add-zone', 'edit-zone']
+    COMMANDS = ['list-zones', 'show-zone', 'add-zone', 'edit-zone', 'notify']
 
     @classmethod
     def init_parser(cls, subparsers, zone_parser):
@@ -36,6 +36,8 @@ class ZONE(PDNSCommand):
                                help='set the RD bit for forwarded zones (authoritative only)')
 
         subparsers.add_parser('delete-zone', parents=[zone_parser], help='delete a zone')
+
+        subparsers.add_parser('notify', parents=[zone_parser], help='send DNS NOTIFY to slaves for zone')
 
     def run(self):
         getattr(self, (self.args.action).replace('-', '_'))()
@@ -88,3 +90,9 @@ class ZONE(PDNSCommand):
         zone = server.zone(self.args.zone)
 
         zone.delete()
+    
+    def notify(self):
+        server = self.api.server(self.args.server)
+        zone = server.zone(self.args.zone)
+
+        zone.notify()

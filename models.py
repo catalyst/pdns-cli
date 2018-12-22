@@ -110,6 +110,9 @@ class Zone(Model):
         self.api.patch(self.path, json={'rrsets': rrsets_changes})
         self._data = {}  # clear to force refresh on next access
 
+    def notify(self):
+        self.api.put(self.path)
+        self._data = {}
 
 class RRset(object):
 
