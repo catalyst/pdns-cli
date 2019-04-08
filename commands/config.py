@@ -18,4 +18,12 @@ class CONFIG(PDNSCommand):
         subparsers.add_parser('check', parents=[zone_parser], help='verify a zone content/configuration')
 
     def run(self):
-        self.fail('This command is not yet implemented')
+        if self.args.action == 'notify':
+            getattr(self, (self.args.action).replace('-', '_'))()
+        else:
+            self.fail('This command is not yet implemented')
+
+    def notify(self):
+        server = self.api.server(self.args.server)
+        zone = server.zone(self.args.zone)
+        zone.notify()

@@ -110,6 +110,9 @@ class Zone(Model):
         self.api.patch(self.path, json={'rrsets': rrsets_changes})
         self._data = {}  # clear to force refresh on next access
 
+    #Send a DNS NOTIFY to all slaves.
+    def notify(self):
+        self.api.put('{0}/notify'.format(self.path))
 
 class RRset(object):
 
