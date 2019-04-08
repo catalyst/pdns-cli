@@ -117,9 +117,8 @@ actions:
     show-rrsets         show Resource Record sets for a zone
     edit-rrset          add/replace/delete a record in Resource Record set
     delete-rrset        delete a Resource Record set
-    edit-rrset-comments
-                        add/replace/delete a comment in Resource Record set
-    !notify              send a DNS NOTIFY to all slaves for a zone
+    edit-rrset-comments add/replace/delete a comment in Resource Record set
+    notify              send a DNS NOTIFY to all slaves for a zone
     !axfr-retrieve       retrieve a zone from the master
     !export              export a zone in AXFR format
     !check               verify a zone content/configuration
