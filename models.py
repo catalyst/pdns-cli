@@ -93,7 +93,7 @@ class Zone(Model):
 
     @property
     def rrsets(self):
-        return {RRset(**rrset) for rrset in self.data['records']}
+        return {RRset(**rrset) for rrset in self.data['rrsets']}
 
     def update_rrsets(self, rrsets, delete=False):
         rrsets_changes = []
@@ -116,11 +116,9 @@ class Zone(Model):
 
 class RRset(object):
 
-    def __init__(self, name, type, content=None, disabled=False, ttl=None, records=[], comments=[]):
+    def __init__(self, name, type, ttl=None, records=[], comments=[]):
         self.name = name
         self.type = type
-        self.content = content
-        self.disabled = disabled
         self.ttl = ttl
         self.records = {Record(**record) for record in records}
         self.comments = {Comment(**comment) for comment in comments}
@@ -129,8 +127,6 @@ class RRset(object):
         return {
             'name': self.name,
             'type': self.type,
-            'content': self.content,
-            'disabled': self.disabled,
             'ttl': self.ttl,
             'records': [record.to_dict() for record in self.records],
             'comments': [comment.to_dict() for comment in self.comments]
