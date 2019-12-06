@@ -93,7 +93,7 @@ class Zone(Model):
 
     @property
     def rrsets(self):
-        return {RRset(**rrset) for rrset in self.data['records']}
+        return {RRset(**rrset) for rrset in self.data['rrsets']}
 
     def update_rrsets(self, rrsets, delete=False):
         rrsets_changes = []
