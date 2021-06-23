@@ -25,7 +25,7 @@ class RRSET(PDNSCommand):
                                      help='delete a record for a domain/subdomain')
         edit_rrset.add_argument('--disabled', action='store_true', help='disable record')
         edit_rrset.add_argument('--set-ptr', action='store_true', help='set PTR records in matching reverse zones')
-        edit_rrset.add_argument('--ttl', type=int, default=3600, help='record TTL')
+        edit_rrset.add_argument('--ttl', type=int, default=300, help='record TTL')
         edit_rrset.add_argument('name', help='record name')
         edit_rrset.add_argument('type', help='record type')
         edit_rrset.add_argument('content', help='record content')
