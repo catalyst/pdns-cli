@@ -1,6 +1,6 @@
 from . import PDNSCommand
 from datetime import datetime
-from models import RRset,Record,Comment
+from ..models import RRset,Record,Comment
 from operator import attrgetter
 import time
 
