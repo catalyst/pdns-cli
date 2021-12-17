@@ -12,9 +12,9 @@ import colored
 
 from datetime import datetime
 from operator import attrgetter
-from commands import *
+from .commands import *
 
-from api import PDNSAPI
+from .api import PDNSAPI
 
 
 class PDNSClient(object):
@@ -238,6 +238,6 @@ class PDNSClient(object):
         for setting in sorted(server.config, key=attrgetter('id')):
             print('{}: {}'.format(setting.data['name'], setting.data['value']))
 
-if __name__ == '__main__':
+def main():
     pdns_client = PDNSClient()
     pdns_client.run()

@@ -2,7 +2,7 @@ from requests import Session
 from requests.auth import AuthBase
 from urllib.parse import urljoin
 
-import models
+from . import models
 
 
 class APIKeyAuth(AuthBase):
