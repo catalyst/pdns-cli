@@ -116,9 +116,11 @@ class Zone(Model):
 
 class RRset(object):
 
-    def __init__(self, name, type, ttl=None, records=[], comments=[]):
+    def __init__(self, name, type, content=None, disabled=False, ttl=None, records=[], comments=[]):
         self.name = name
         self.type = type
+        self.content = content
+        self.disabled = disabled
         self.ttl = ttl
         self.records = {Record(**record) for record in records}
         self.comments = {Comment(**comment) for comment in comments}
@@ -128,6 +130,8 @@ class RRset(object):
             'name': self.name,
             'type': self.type,
             'ttl': self.ttl,
+            'content': self.content,
+            'disabled': self.disabled,
             'records': [record.to_dict() for record in self.records],
             'comments': [comment.to_dict() for comment in self.comments]
         }
