@@ -1,3 +1,4 @@
+import json
 class Model(object):
 
     name = None
@@ -35,7 +36,14 @@ class Model(object):
     @classmethod
     def create(cls, api, parent=None, data={}):
         response = api.post(cls.collection_path(parent), json=data)
-        return cls(api, response.json()[cls.id_attr], parent=parent, data=response.json())
+        response_json = ''
+        # If the response was 204 no content success, the update worked
+        # Fill out the response json with the inbound data
+        if response.status_code == 204:
+            response_json = json.dumps(data)
+        else:
+            response_json = response.json()
+        return cls(api, response_json[cls.id_attr], parent=parent, data=response_json)
 
     def load(self):
         response = self.api.get(self.path)
@@ -44,7 +52,14 @@ class Model(object):
     reload = load
 
     def update(self, **kwargs):
-        self._data = self.api.put(self.path, json=kwargs).json()
+        # If the response was 204 no content success, the update worked
+        # Fill out the response json with the inbound data
+        response = self.api.put(self.path, json=kwargs)
+        if response.status_code == 204:
+            response_json = json.dumps(kwargs)
+        else:
+            response_json = response.json()
+        self._data = response_json
 
     def delete(self):
         self.api.delete(self.path)
