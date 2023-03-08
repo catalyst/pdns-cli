@@ -9,6 +9,8 @@ import argcomplete
 import toml
 import os
 import colored
+import logging
+import http.client as http_client
 
 from datetime import datetime
 from operator import attrgetter
@@ -63,8 +65,19 @@ class PDNSClient(object):
         else:
             auth = None
 
+        logging.basicConfig()
         self.api = PDNSAPI(self.args.url, verify=(not self.args.insecure),
                            basic_auth=auth, api_key=self.args.api_key)
+
+        if self.args.debug:
+            logging.getLogger().setLevel(logging.DEBUG)
+            #These two lines enable debugging at httplib level (requests->urllib3->http.client)
+            # You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
+            # The only thing missing will be the response.body which is not logged.
+            http_client.HTTPConnection.debuglevel = 1
+            requests_log = logging.getLogger("requests.packages.urllib3")
+            requests_log.setLevel(logging.DEBUG)
+            requests_log.propagate = True
 
         # Look up the action to see if it's implemented in a module, or raise an error
         cmd = self.args.action
@@ -214,6 +227,7 @@ class PDNSClient(object):
         parser.add_argument('-c', '--config-path', help='give a different config file path')
         parser.add_argument('-u', '--url', help='PowerDNS API URL')
         parser.add_argument('-s', '--server', help='server ID')
+        parser.add_argument('-d', '--debug', action='store_true', default=False, help='Turn on request debug logging')
 
 
         subparsers = parser.add_subparsers(title='actions', metavar='action', dest='action')
