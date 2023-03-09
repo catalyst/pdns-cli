@@ -49,6 +49,8 @@ List RRsets in the `example.org` zone:
 ./pdns -a user:token -u https://dns.example.com/api/v1/ -s localhost show-rrsets localhost example.org.
 ```
 
+Changing an RRsets type requires deleting the old RRset and adding it as the new type as two operations
+
 ## Configuration
 
 While you can specify at runtime all details required to connect to a PowerDNS API, it's much more ergonomic to instead use a configuration file. This is a file in the [.toml](https://github.com/toml-lang/toml) format located in one of the following two places
