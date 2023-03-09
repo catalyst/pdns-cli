@@ -5,6 +5,13 @@ class ZONE(PDNSCommand):
     DESCRIPTION = 'Zone related API actions'
     COMMANDS = ['list-zones', 'show-zone', 'add-zone', 'edit-zone']
 
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize command: store args
+        """
+        super(ZONE, self).__init__(*args, **kwargs)
+        self.editable_zone_values = ['masters', 'servers', 'account', 'recursion_desired', 'soa_edit', 'soa_edit_api']
+
     @classmethod
     def init_parser(cls, subparsers, zone_parser):
         # zones
@@ -25,6 +32,8 @@ class ZONE(PDNSCommand):
         add_zone.add_argument('--account', help='account (authoritative only)')
         add_zone.add_argument('--recursion-desired', action='store_true',
                               help='set the RD bit for forwarded zones (authoritative only)')
+        add_zone.add_argument('--soa-edit-api', choices=('DEFAULT', 'INCREASE', 'EPOCH', 'SOA-EDIT', 'SOA-EDIT-INCREASE'), help='SOA EDIT API setting')
+        add_zone.add_argument('--soa-edit', choices=('INCREMENT-WEEKS', 'INCEPTION-EPOCH', 'INCEPTION-INCREMENT', 'EPOC', 'NONE'), help='SOA EDIT setting for dnssec https://doc.powerdns.com/authoritative/dnssec/operational.html#soa-edit-ensure-signature-freshness-on-slaves')
 
         edit_zone = subparsers.add_parser('edit-zone', parents=[zone_parser], help='add a new zone')
         edit_zone.add_argument('--kind', choices=('Native', 'Master', 'Slave', 'Forwarded'), help='kind of zone')
@@ -34,6 +43,8 @@ class ZONE(PDNSCommand):
         edit_zone.add_argument('--account', help='account (authoritative only)')
         edit_zone.add_argument('--recursion-desired', action='store_true',
                                help='set the RD bit for forwarded zones (authoritative only)')
+        edit_zone.add_argument('--soa-edit-api', choices=('DEFAULT', 'INCREASE', 'EPOCH', 'SOA-EDIT', 'SOA-EDIT-INCREASE'), help='SOA EDIT API serial update strategy https://doc.powerdns.com/authoritative/domainmetadata.html#soa-edit-api')
+        edit_zone.add_argument('--soa-edit', choices=('INCREMENT-WEEKS', 'INCEPTION-EPOCH', 'INCEPTION-INCREMENT', 'EPOC', 'NONE'), help='SOA EDIT setting for dnssec https://doc.powerdns.com/authoritative/dnssec/operational.html#soa-edit-ensure-signature-freshness-on-slaves')
 
         subparsers.add_parser('delete-zone', parents=[zone_parser], help='delete a zone')
 
@@ -65,7 +76,7 @@ class ZONE(PDNSCommand):
             self.fail('nameservers name must end with a dot!')
 
         data = {key: getattr(self.args, key)
-                for key in ('masters', 'servers', 'account', 'recursion_desired')
+                for key in self.editable_zone_values
                 if getattr(self.args, key) is not None}
         zone = server.create_zone(self.args.name, kind=self.args.kind, nameservers=self.args.nameservers, **data)
 
@@ -76,7 +87,7 @@ class ZONE(PDNSCommand):
         zone = server.zone(self.args.zone)
 
         data = {key: getattr(self.args, key)
-                for key in ('kind', 'masters', 'servers', 'account', 'recursion_desired')
+                for key in self.editable_zone_values
                 if getattr(self.args, key) is not None}
         # mandatory for some reason
         if 'kind' not in data:
