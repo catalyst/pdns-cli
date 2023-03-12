@@ -33,7 +33,7 @@ class ZONE(PDNSCommand):
         add_zone.add_argument('--recursion-desired', action='store_true',
                               help='set the RD bit for forwarded zones (authoritative only)')
         add_zone.add_argument('--soa-edit-api', choices=('DEFAULT', 'INCREASE', 'EPOCH', 'SOA-EDIT', 'SOA-EDIT-INCREASE'), help='SOA EDIT API setting')
-        add_zone.add_argument('--soa-edit', choices=('INCREMENT-WEEKS', 'INCEPTION-EPOCH', 'INCEPTION-INCREMENT', 'EPOC', 'NONE'), help='SOA EDIT setting for dnssec https://doc.powerdns.com/authoritative/dnssec/operational.html#soa-edit-ensure-signature-freshness-on-slaves')
+        add_zone.add_argument('--soa-edit', choices=('INCREMENT-WEEKS', 'INCEPTION-EPOCH', 'INCEPTION-INCREMENT', 'EPOCH', 'NONE'), help='SOA EDIT setting for dnssec https://doc.powerdns.com/authoritative/dnssec/operational.html#soa-edit-ensure-signature-freshness-on-slaves')
 
         edit_zone = subparsers.add_parser('edit-zone', parents=[zone_parser], help='add a new zone')
         edit_zone.add_argument('--kind', choices=('Native', 'Master', 'Slave', 'Forwarded'), help='kind of zone')
@@ -44,7 +44,7 @@ class ZONE(PDNSCommand):
         edit_zone.add_argument('--recursion-desired', action='store_true',
                                help='set the RD bit for forwarded zones (authoritative only)')
         edit_zone.add_argument('--soa-edit-api', choices=('DEFAULT', 'INCREASE', 'EPOCH', 'SOA-EDIT', 'SOA-EDIT-INCREASE'), help='SOA EDIT API serial update strategy https://doc.powerdns.com/authoritative/domainmetadata.html#soa-edit-api')
-        edit_zone.add_argument('--soa-edit', choices=('INCREMENT-WEEKS', 'INCEPTION-EPOCH', 'INCEPTION-INCREMENT', 'EPOC', 'NONE'), help='SOA EDIT setting for dnssec https://doc.powerdns.com/authoritative/dnssec/operational.html#soa-edit-ensure-signature-freshness-on-slaves')
+        edit_zone.add_argument('--soa-edit', choices=('INCREMENT-WEEKS', 'INCEPTION-EPOCH', 'INCEPTION-INCREMENT', 'EPOCH', 'NONE'), help='SOA EDIT setting for dnssec https://doc.powerdns.com/authoritative/dnssec/operational.html#soa-edit-ensure-signature-freshness-on-slaves')
 
         subparsers.add_parser('delete-zone', parents=[zone_parser], help='delete a zone')
 
