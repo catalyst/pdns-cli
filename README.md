@@ -52,7 +52,9 @@ List RRsets in the `example.org` zone:
 Changing an RRsets type requires deleting the old RRset and adding it as the new type as two operations
 
 To add records to the root of a domain, you specify the full dns path of the domain (including root dot) as the target rrset, eg.
-`pdns -c conf.toml edit-rrset example.org --add --ttl 60 example.org. NS ns1.bogus.com.`
+```
+pdns -c conf.toml edit-rrset example.org --add --ttl 60 example.org. NS ns1.bogus.com.
+```
 
 ## Configuration
 
